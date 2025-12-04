@@ -1,0 +1,58 @@
+@ProfGestor_HostAddress = https://localhost:7224
+@Token = seu_token_jwt_aqui
+
+### Autenticação - Login
+POST {{ProfGestor_HostAddress}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "professor@email.com",
+  "senha": "senha123"
+}
+
+### Autenticação - Registrar
+POST {{ProfGestor_HostAddress}}/api/auth/register
+Content-Type: application/json
+
+{
+  "nome": "João Silva",
+  "email": "joao@email.com",
+  "senha": "senha123",
+  "confirmarSenha": "senha123"
+}
+
+### Autenticação - Obter usuário atual
+GET {{ProfGestor_HostAddress}}/api/auth/me
+Authorization: Bearer {{Token}}
+
+### Professores - Listar todos
+GET {{ProfGestor_HostAddress}}/api/Professores
+Authorization: Bearer {{Token}}
+
+### Professores - Obter por ID
+GET {{ProfGestor_HostAddress}}/api/Professores/1
+Authorization: Bearer {{Token}}
+
+### Turmas - Listar todas
+GET {{ProfGestor_HostAddress}}/api/Turmas
+Authorization: Bearer {{Token}}
+
+### Turmas - Obter por ID
+GET {{ProfGestor_HostAddress}}/api/Turmas/1
+Authorization: Bearer {{Token}}
+
+### Alunos - Listar todos
+GET {{ProfGestor_HostAddress}}/api/Alunos
+Authorization: Bearer {{Token}}
+
+### Alunos - Obter por ID
+GET {{ProfGestor_HostAddress}}/api/Alunos/1
+Authorization: Bearer {{Token}}
+
+### Planejamentos - Listar todos
+GET {{ProfGestor_HostAddress}}/api/PlanejamentosAula
+Authorization: Bearer {{Token}}
+
+### Planejamentos - Obter favoritos
+GET {{ProfGestor_HostAddress}}/api/PlanejamentosAula/favoritos
+Authorization: Bearer {{Token}}

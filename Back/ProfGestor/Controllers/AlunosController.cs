@@ -11,10 +11,12 @@ namespace ProfGestor.Controllers;
 public class AlunosController : ControllerBase
 {
     private readonly IAlunoService _alunoService;
+    private readonly ITurmaService _turmaService;
 
-    public AlunosController(IAlunoService alunoService)
+    public AlunosController(IAlunoService alunoService, ITurmaService turmaService)
     {
         _alunoService = alunoService;
+        _turmaService = turmaService;
     }
 
     [HttpGet]
@@ -37,8 +39,20 @@ public class AlunosController : ControllerBase
     [HttpGet("turma/{turmaId}")]
     public async Task<ActionResult<IEnumerable<AlunoDTO>>> GetByTurmaId(long turmaId)
     {
+        var professorId = long.Parse(User.FindFirst("ProfessorId")?.Value ?? "0");
+        if (professorId == 0)
+            return Unauthorized();
+
         try
         {
+            // Verificar se a turma pertence ao professor
+            var turma = await _turmaService.GetByIdAsync(turmaId);
+            if (turma == null)
+                return NotFound();
+
+            if (turma.ProfessorId != professorId)
+                return Forbid();
+
             var alunos = await _alunoService.GetByTurmaIdAsync(turmaId);
             return Ok(alunos);
         }

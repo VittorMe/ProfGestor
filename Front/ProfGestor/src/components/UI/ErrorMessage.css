@@ -1,0 +1,36 @@
+.error-message {
+  padding: 1rem;
+  margin: 1rem 0;
+  background-color: #fee2e2;
+  color: #dc2626;
+  border-radius: 0.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.error-text {
+  flex: 1;
+}
+
+.error-dismiss {
+  background: none;
+  border: none;
+  color: #dc2626;
+  font-size: 24px;
+  cursor: pointer;
+  padding: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  transition: opacity 0.2s;
+}
+
+.error-dismiss:hover {
+  opacity: 0.7;
+}
+

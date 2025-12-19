@@ -4,6 +4,8 @@ import { ProtectedRoute } from './components/ProtectedRoute';
 import { Login } from './pages/Login';
 import { Register } from './pages/Register';
 import { Dashboard } from './pages/Dashboard';
+import { Turmas } from './pages/Turmas';
+import { Frequencia } from './pages/Frequencia';
 import { Test } from './pages/Test';
 import './App.css';
 
@@ -48,6 +50,22 @@ function App() {
             element={
               <ProtectedRoute>
                 <Dashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/turmas"
+            element={
+              <ProtectedRoute>
+                <Turmas />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/frequencia"
+            element={
+              <ProtectedRoute>
+                <Frequencia />
               </ProtectedRoute>
             }
           />

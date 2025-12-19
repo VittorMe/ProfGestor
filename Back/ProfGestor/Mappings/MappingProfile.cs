@@ -46,6 +46,33 @@ public class MappingProfile : Profile
 
         // Log
         CreateMap<Models.Log, LogDTO>();
+
+        // Disciplina
+        CreateMap<Disciplina, DisciplinaDTO>();
+        CreateMap<DisciplinaCreateDTO, Disciplina>();
+        CreateMap<DisciplinaUpdateDTO, Disciplina>()
+            .ForMember(dest => dest.Id, opt => opt.Ignore());
+
+        // Aula
+        CreateMap<Aula, AulaDTO>()
+            .ForMember(dest => dest.TurmaNome, opt => opt.MapFrom(src => src.Turma.Nome))
+            .ForMember(dest => dest.DisciplinaNome, opt => opt.MapFrom(src => src.Turma.Disciplina.Nome))
+            .ForMember(dest => dest.TemFrequenciaRegistrada, opt => opt.MapFrom(src => src.Frequencias.Any()))
+            .ForMember(dest => dest.AnotacaoTexto, opt => opt.MapFrom(src => src.AnotacaoAula != null ? src.AnotacaoAula.Texto : null));
+        CreateMap<AulaCreateDTO, Aula>();
+        CreateMap<AulaUpdateDTO, Aula>()
+            .ForMember(dest => dest.Id, opt => opt.Ignore())
+            .ForMember(dest => dest.TurmaId, opt => opt.Ignore());
+
+        // Frequencia
+        CreateMap<Frequencia, FrequenciaDTO>()
+            .ForMember(dest => dest.AlunoNome, opt => opt.MapFrom(src => src.Aluno.Nome))
+            .ForMember(dest => dest.AlunoMatricula, opt => opt.MapFrom(src => src.Aluno.Matricula));
+        CreateMap<FrequenciaCreateDTO, Frequencia>();
+        CreateMap<FrequenciaUpdateDTO, Frequencia>()
+            .ForMember(dest => dest.Id, opt => opt.Ignore())
+            .ForMember(dest => dest.AlunoId, opt => opt.Ignore())
+            .ForMember(dest => dest.AulaId, opt => opt.Ignore());
     }
 }
 

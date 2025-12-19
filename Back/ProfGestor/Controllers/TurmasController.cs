@@ -20,16 +20,30 @@ public class TurmasController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<IEnumerable<TurmaDTO>>> GetAll()
     {
-        var turmas = await _turmaService.GetAllAsync();
+        // Pegar professorId do token JWT
+        var professorId = long.Parse(User.FindFirst("ProfessorId")?.Value ?? "0");
+        if (professorId == 0)
+            return Unauthorized();
+
+        // Filtrar turmas do professor logado
+        var turmas = await _turmaService.GetByProfessorIdAsync(professorId);
         return Ok(turmas);
     }
 
     [HttpGet("{id}")]
     public async Task<ActionResult<TurmaDTO>> GetById(long id)
     {
+        var professorId = long.Parse(User.FindFirst("ProfessorId")?.Value ?? "0");
+        if (professorId == 0)
+            return Unauthorized();
+
         var turma = await _turmaService.GetByIdAsync(id);
         if (turma == null)
             return NotFound();
+
+        // Validar se a turma pertence ao professor
+        if (turma.ProfessorId != professorId)
+            return Forbid();
 
         return Ok(turma);
     }
@@ -51,6 +65,13 @@ public class TurmasController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<TurmaDTO>> Create([FromBody] TurmaCreateDTO dto)
     {
+        var professorId = long.Parse(User.FindFirst("ProfessorId")?.Value ?? "0");
+        if (professorId == 0)
+            return Unauthorized();
+
+        // Garantir que o professorId seja o do professor logado
+        dto.ProfessorId = professorId;
+
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
 
@@ -68,6 +89,21 @@ public class TurmasController : ControllerBase
     [HttpPut("{id}")]
     public async Task<ActionResult<TurmaDTO>> Update(long id, [FromBody] TurmaUpdateDTO dto)
     {
+        var professorId = long.Parse(User.FindFirst("ProfessorId")?.Value ?? "0");
+        if (professorId == 0)
+            return Unauthorized();
+
+        // Verificar se a turma existe e pertence ao professor
+        var turmaExistente = await _turmaService.GetByIdAsync(id);
+        if (turmaExistente == null)
+            return NotFound();
+
+        if (turmaExistente.ProfessorId != professorId)
+            return Forbid();
+
+        // Garantir que o professorId no DTO seja o do professor logado
+        dto.ProfessorId = professorId;
+
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
 
@@ -85,6 +121,18 @@ public class TurmasController : ControllerBase
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(long id)
     {
+        var professorId = long.Parse(User.FindFirst("ProfessorId")?.Value ?? "0");
+        if (professorId == 0)
+            return Unauthorized();
+
+        // Verificar se a turma existe e pertence ao professor
+        var turma = await _turmaService.GetByIdAsync(id);
+        if (turma == null)
+            return NotFound();
+
+        if (turma.ProfessorId != professorId)
+            return Forbid();
+
         try
         {
             var deleted = await _turmaService.DeleteAsync(id);

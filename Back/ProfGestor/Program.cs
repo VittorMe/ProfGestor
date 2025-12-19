@@ -74,6 +74,8 @@ namespace ProfGestor
             builder.Services.AddScoped<IAlunoRepository, AlunoRepository>();
             builder.Services.AddScoped<IPlanejamentoAulaRepository, PlanejamentoAulaRepository>();
             builder.Services.AddScoped<ILogRepository, LogRepository>();
+            builder.Services.AddScoped<IAulaRepository, AulaRepository>();
+            builder.Services.AddScoped<IFrequenciaRepository, FrequenciaRepository>();
             builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
 
             // Registrar Services
@@ -83,6 +85,10 @@ namespace ProfGestor
             builder.Services.AddScoped<IPlanejamentoAulaService, PlanejamentoAulaService>();
             builder.Services.AddScoped<IAuthService, AuthService>();
             builder.Services.AddScoped<ILogService, LogService>();
+            builder.Services.AddScoped<IDashboardService, DashboardService>();
+            builder.Services.AddScoped<IDisciplinaService, DisciplinaService>();
+            builder.Services.AddScoped<IAulaService, AulaService>();
+            builder.Services.AddScoped<IFrequenciaService, FrequenciaService>();
 
             // Configurar JSON para usar camelCase (padrão JavaScript/TypeScript)
             builder.Services.AddControllers()

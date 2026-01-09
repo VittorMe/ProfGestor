@@ -7,3 +7,4 @@ public interface IDashboardService
     Task<DashboardDTO> GetDashboardDataAsync(long professorId);
 }
 
+

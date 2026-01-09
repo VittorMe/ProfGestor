@@ -25,3 +25,4 @@ public class AulaUpdateDTO
     public string Periodo { get; set; } = string.Empty;
 }
 
+

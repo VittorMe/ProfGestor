@@ -10,3 +10,4 @@ public interface IFrequenciaRepository : IRepository<Frequencia>
     Task<IEnumerable<Frequencia>> GetByAulaIdWithDetailsAsync(long aulaId);
 }
 
+

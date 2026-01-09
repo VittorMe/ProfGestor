@@ -11,16 +11,62 @@ namespace ProfGestor.Controllers;
 public class PlanejamentosAulaController : ControllerBase
 {
     private readonly IPlanejamentoAulaService _planejamentoService;
+    private readonly ITurmaService _turmaService;
 
-    public PlanejamentosAulaController(IPlanejamentoAulaService planejamentoService)
+    public PlanejamentosAulaController(IPlanejamentoAulaService planejamentoService, ITurmaService turmaService)
     {
         _planejamentoService = planejamentoService;
+        _turmaService = turmaService;
     }
 
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<PlanejamentoAulaDTO>>> GetAll()
+    public async Task<ActionResult<IEnumerable<PlanejamentoAulaDTO>>> GetAll([FromQuery] string? search, [FromQuery] long? disciplinaId, [FromQuery] bool? favoritos)
     {
-        var planejamentos = await _planejamentoService.GetAllAsync();
+        var professorId = long.Parse(User.FindFirst("ProfessorId")?.Value ?? "0");
+        if (professorId == 0)
+            return Unauthorized();
+
+        // Buscar disciplinas do professor através das turmas
+        var turmas = await _turmaService.GetByProfessorIdAsync(professorId);
+        var disciplinaIds = turmas.Select(t => t.DisciplinaId).Distinct().ToList();
+
+        IEnumerable<PlanejamentoAulaDTO> planejamentos;
+
+        // Se filtro de favoritos está ativo
+        if (favoritos == true)
+        {
+            if (disciplinaId.HasValue && disciplinaIds.Contains(disciplinaId.Value))
+            {
+                // Favoritos de uma disciplina específica
+                var todos = await _planejamentoService.GetByDisciplinaIdAsync(disciplinaId.Value);
+                planejamentos = todos.Where(p => p.Favorito);
+            }
+            else
+            {
+                // Favoritos de todas as disciplinas do professor
+                planejamentos = await _planejamentoService.GetFavoritosByDisciplinasAsync(disciplinaIds);
+            }
+        }
+        else if (disciplinaId.HasValue && disciplinaIds.Contains(disciplinaId.Value))
+        {
+            // Filtro por disciplina específica
+            planejamentos = await _planejamentoService.GetByDisciplinaIdAsync(disciplinaId.Value);
+        }
+        else
+        {
+            // Buscar por disciplinas do professor
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                planejamentos = await _planejamentoService.SearchByDisciplinasAsync(search, disciplinaIds);
+            }
+            else
+            {
+                // Todos os planejamentos das disciplinas do professor
+                var allPlanejamentos = await _planejamentoService.GetAllAsync();
+                planejamentos = allPlanejamentos.Where(p => disciplinaIds.Contains(p.DisciplinaId));
+            }
+        }
+
         return Ok(planejamentos);
     }
 
@@ -51,7 +97,15 @@ public class PlanejamentosAulaController : ControllerBase
     [HttpGet("favoritos")]
     public async Task<ActionResult<IEnumerable<PlanejamentoAulaDTO>>> GetFavoritos()
     {
-        var planejamentos = await _planejamentoService.GetFavoritosAsync();
+        var professorId = long.Parse(User.FindFirst("ProfessorId")?.Value ?? "0");
+        if (professorId == 0)
+            return Unauthorized();
+
+        // Buscar disciplinas do professor através das turmas
+        var turmas = await _turmaService.GetByProfessorIdAsync(professorId);
+        var disciplinaIds = turmas.Select(t => t.DisciplinaId).Distinct().ToList();
+
+        var planejamentos = await _planejamentoService.GetFavoritosByDisciplinasAsync(disciplinaIds);
         return Ok(planejamentos);
     }
 
@@ -81,6 +135,20 @@ public class PlanejamentosAulaController : ControllerBase
         try
         {
             var updated = await _planejamentoService.UpdateAsync(id, dto);
+            return Ok(updated);
+        }
+        catch (Exceptions.NotFoundException ex)
+        {
+            return NotFound(new { error = ex.Message });
+        }
+    }
+
+    [HttpPatch("{id}/favorito")]
+    public async Task<ActionResult<PlanejamentoAulaDTO>> ToggleFavorito(long id)
+    {
+        try
+        {
+            var updated = await _planejamentoService.ToggleFavoritoAsync(id);
             return Ok(updated);
         }
         catch (Exceptions.NotFoundException ex)

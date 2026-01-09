@@ -111,99 +111,115 @@ public class FrequenciaService : IFrequenciaService
 
     public async Task<AulaDTO> RegistrarFrequenciaAsync(RegistrarFrequenciaDTO dto)
     {
-        // Validar turma
-        var turma = await _turmaRepository.GetByIdWithDetailsAsync(dto.TurmaId);
-        if (turma == null)
-            throw new NotFoundException("Turma", dto.TurmaId);
-
-        // Buscar ou criar aula
-        var aulasExistentes = await _aulaRepository.GetByTurmaIdAndDataAsync(dto.TurmaId, dto.DataAula);
-        var aulaExistente = aulasExistentes.FirstOrDefault();
-
-        Models.Aula aula;
-        if (aulaExistente != null)
+        // Usar transação para garantir atomicidade de todas as operações
+        using var transaction = await _context.Database.BeginTransactionAsync();
+        try
         {
-            aula = aulaExistente;
-            // Atualizar período se necessário
-            if (aula.Periodo != dto.Periodo)
+            // Validar turma
+            var turma = await _turmaRepository.GetByIdWithDetailsAsync(dto.TurmaId);
+            if (turma == null)
+                throw new NotFoundException("Turma", dto.TurmaId);
+
+            // Validar que todos os alunos pertencem à turma ANTES de fazer qualquer alteração
+            var alunosIds = dto.Frequencias.Select(f => f.AlunoId).Distinct().ToList();
+            var alunos = await _alunoRepository.GetByTurmaIdAsync(dto.TurmaId);
+            var alunosIdsValidos = alunos.Select(a => a.Id).ToList();
+
+            foreach (var alunoId in alunosIds)
             {
-                aula.Periodo = dto.Periodo;
-                await _aulaRepository.UpdateAsync(aula);
+                if (!alunosIdsValidos.Contains(alunoId))
+                    throw new BusinessException($"Aluno com ID {alunoId} não pertence à turma {dto.TurmaId}");
             }
-        }
-        else
-        {
-            // Criar nova aula
-            aula = new Models.Aula
+
+            // Buscar ou criar aula
+            var aulasExistentes = await _aulaRepository.GetByTurmaIdAndDataAsync(dto.TurmaId, dto.DataAula);
+            var aulaExistente = aulasExistentes.FirstOrDefault();
+
+            Models.Aula aula;
+            if (aulaExistente != null)
             {
-                Data = dto.DataAula,
-                Periodo = dto.Periodo,
-                TurmaId = dto.TurmaId
-            };
-            aula = await _aulaRepository.AddAsync(aula);
-        }
-
-        // Validar que todos os alunos pertencem à turma
-        var alunosIds = dto.Frequencias.Select(f => f.AlunoId).ToList();
-        var alunos = await _alunoRepository.GetByTurmaIdAsync(dto.TurmaId);
-        var alunosIdsValidos = alunos.Select(a => a.Id).ToList();
-
-        foreach (var alunoId in alunosIds)
-        {
-            if (!alunosIdsValidos.Contains(alunoId))
-                throw new BusinessException($"Aluno com ID {alunoId} não pertence à turma {dto.TurmaId}");
-        }
-
-        // Remover frequências existentes para esta aula
-        var frequenciasExistentes = await _repository.GetByAulaIdAsync(aula.Id);
-        if (frequenciasExistentes.Any())
-        {
-            foreach (var freq in frequenciasExistentes)
-            {
-                await _repository.DeleteAsync(freq);
-            }
-        }
-
-        // Criar novas frequências
-        var frequencias = dto.Frequencias.Select(f => new Frequencia
-        {
-            Status = f.Status,
-            AlunoId = f.AlunoId,
-            AulaId = aula.Id
-        }).ToList();
-
-        foreach (var frequencia in frequencias)
-        {
-            await _repository.AddAsync(frequencia);
-        }
-
-        // Criar ou atualizar anotação da aula se fornecida
-        if (!string.IsNullOrWhiteSpace(dto.AnotacaoTexto))
-        {
-            var anotacaoExistente = await _context.AnotacoesAula
-                .FirstOrDefaultAsync(a => a.AulaId == aula.Id);
-
-            if (anotacaoExistente != null)
-            {
-                anotacaoExistente.Texto = dto.AnotacaoTexto;
-                _context.AnotacoesAula.Update(anotacaoExistente);
+                aula = aulaExistente;
+                // Atualizar período se necessário
+                if (aula.Periodo != dto.Periodo)
+                {
+                    aula.Periodo = dto.Periodo;
+                    _context.Aulas.Update(aula);
+                }
             }
             else
             {
-                var novaAnotacao = new AnotacaoAula
+                // Criar nova aula
+                aula = new Models.Aula
                 {
-                    Texto = dto.AnotacaoTexto,
-                    AulaId = aula.Id,
-                    DataRegistro = DateTime.Now
+                    Data = dto.DataAula,
+                    Periodo = dto.Periodo,
+                    TurmaId = dto.TurmaId
                 };
-                await _context.AnotacoesAula.AddAsync(novaAnotacao);
+                await _context.Aulas.AddAsync(aula);
             }
-            await _context.SaveChangesAsync();
-        }
 
-        // Retornar aula completa
-        var aulaCompleta = await _aulaRepository.GetByIdWithDetailsAsync(aula.Id);
-        return _mapper.Map<AulaDTO>(aulaCompleta!);
+            // Salvar mudanças na aula antes de trabalhar com frequências
+            await _context.SaveChangesAsync();
+
+            // Remover frequências existentes para esta aula (usando RemoveRange para eficiência)
+            var frequenciasExistentes = await _repository.GetByAulaIdAsync(aula.Id);
+            if (frequenciasExistentes.Any())
+            {
+                _context.Frequencias.RemoveRange(frequenciasExistentes);
+            }
+
+            // Criar novas frequências
+            var frequencias = dto.Frequencias.Select(f => new Frequencia
+            {
+                Status = f.Status,
+                AlunoId = f.AlunoId,
+                AulaId = aula.Id
+            }).ToList();
+
+            if (frequencias.Any())
+            {
+                await _context.Frequencias.AddRangeAsync(frequencias);
+            }
+
+            // Criar ou atualizar anotação da aula se fornecida
+            if (!string.IsNullOrWhiteSpace(dto.AnotacaoTexto))
+            {
+                var anotacaoExistente = await _context.AnotacoesAula
+                    .FirstOrDefaultAsync(a => a.AulaId == aula.Id);
+
+                if (anotacaoExistente != null)
+                {
+                    anotacaoExistente.Texto = dto.AnotacaoTexto;
+                    _context.AnotacoesAula.Update(anotacaoExistente);
+                }
+                else
+                {
+                    var novaAnotacao = new AnotacaoAula
+                    {
+                        Texto = dto.AnotacaoTexto,
+                        AulaId = aula.Id,
+                        DataRegistro = DateTime.Now
+                    };
+                    await _context.AnotacoesAula.AddAsync(novaAnotacao);
+                }
+            }
+
+            // Salvar todas as mudanças de uma vez
+            await _context.SaveChangesAsync();
+
+            // Commit da transação
+            await transaction.CommitAsync();
+
+            // Retornar aula completa
+            var aulaCompleta = await _aulaRepository.GetByIdWithDetailsAsync(aula.Id);
+            return _mapper.Map<AulaDTO>(aulaCompleta!);
+        }
+        catch
+        {
+            // Rollback em caso de erro
+            await transaction.RollbackAsync();
+            throw;
+        }
     }
 }
 

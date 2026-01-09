@@ -8,8 +8,8 @@ export const NAV_ITEMS: NavItem[] = [
   { path: '/dashboard', label: 'Início', icon: '🏠' },
   { path: '/turmas', label: 'Turmas', icon: '👥' },
   { path: '/frequencia', label: 'Frequência', icon: '✓' },
-  { path: '#', label: 'Planejamentos', icon: '📖' },
-  { path: '#', label: 'Avaliações', icon: '📄' },
-  { path: '#', label: 'Relatórios', icon: '📊' },
+  { path: '/planejamentos', label: 'Planejamentos', icon: '📖' },
+  { path: '/avaliacoes', label: 'Avaliações', icon: '📄' },
+  { path: '/relatorios', label: 'Relatórios', icon: '📊' },
 ];
 

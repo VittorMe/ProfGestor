@@ -6,6 +6,7 @@ import { turmaService, type Turma } from '../services/turmaService';
 import { frequenciaService, type StatusFrequencia, type FrequenciaAluno } from '../services/frequenciaService';
 import { aulaService } from '../services/aulaService';
 import { alunoService } from '../services/alunoService';
+import { showSuccess } from '../utils/toast';
 import './Frequencia.css';
 
 interface AlunoFrequencia {
@@ -140,6 +141,15 @@ export const Frequencia = () => {
 
     try {
       setLoading(true);
+      setError(null);
+
+      // Validar que todos os alunos têm status definido
+      const alunosSemStatus = alunos.filter(aluno => aluno.status === null);
+      if (alunosSemStatus.length > 0) {
+        setError('Por favor, defina o status de frequência para todos os alunos.');
+        setLoading(false);
+        return;
+      }
 
       const frequencias: FrequenciaAluno[] = alunos.map(aluno => ({
         alunoId: aluno.alunoId,
@@ -148,13 +158,20 @@ export const Frequencia = () => {
 
       const periodo = '08:00 - 09:00'; // Default, pode ser ajustado
 
-      await frequenciaService.registrarFrequencia({
+      // Garantir que a data está no formato YYYY-MM-DD
+      const dataFormatada = dataAula; // Já vem do input type="date" no formato correto
+
+      const dadosParaEnvio = {
         turmaId: Number(turmaSelecionada),
-        dataAula,
+        dataAula: dataFormatada,
         periodo,
         frequencias,
         anotacaoTexto: anotacao.trim() || undefined,
-      });
+      };
+
+      console.log('Dados sendo enviados:', dadosParaEnvio);
+
+      await frequenciaService.registrarFrequencia(dadosParaEnvio);
 
       // Recarregar dados
       const aula = await aulaService.getByTurmaIdAndData(Number(turmaSelecionada), dataAula);
@@ -170,10 +187,32 @@ export const Frequencia = () => {
         setAnotacao(aula.anotacaoTexto || '');
       }
 
-      alert('Frequência registrada com sucesso!');
+      showSuccess('Frequência registrada com sucesso!');
     } catch (err: any) {
       console.error('Erro ao registrar frequência:', err);
-      setError(err.response?.data?.error || err.response?.data?.message || 'Erro ao registrar frequência. Tente novamente.');
+      console.error('Detalhes do erro:', {
+        status: err.response?.status,
+        data: err.response?.data,
+        message: err.message
+      });
+      
+      // Extrair mensagem de erro mais detalhada
+      let errorMessage = 'Erro ao registrar frequência. Tente novamente.';
+      if (err.response?.data) {
+        if (typeof err.response.data === 'string') {
+          errorMessage = err.response.data;
+        } else if (err.response.data.error) {
+          errorMessage = err.response.data.error;
+        } else if (err.response.data.message) {
+          errorMessage = err.response.data.message;
+        } else if (err.response.data.errors) {
+          // Erros de validação do ModelState
+          const validationErrors = Object.values(err.response.data.errors).flat();
+          errorMessage = validationErrors.join(', ');
+        }
+      }
+      
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }

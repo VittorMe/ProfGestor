@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 using ProfGestor.DTOs;
 using ProfGestor.Services;
 
@@ -63,7 +64,7 @@ public class AulasController : ControllerBase
     }
 
     [HttpGet("turma/{turmaId}/data/{data}")]
-    public async Task<ActionResult<AulaDTO>> GetByTurmaIdAndData(long turmaId, DateOnly data)
+    public async Task<ActionResult<AulaDTO>> GetByTurmaIdAndData(long turmaId, [ModelBinder(typeof(ProfGestor.Binders.DateOnlyModelBinder))] DateOnly data)
     {
         var professorId = long.Parse(User.FindFirst("ProfessorId")?.Value ?? "0");
         if (professorId == 0)

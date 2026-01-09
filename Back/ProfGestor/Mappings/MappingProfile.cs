@@ -34,9 +34,13 @@ public class MappingProfile : Profile
         CreateMap<AlunoUpdateDTO, Aluno>()
             .ForMember(dest => dest.Id, opt => opt.Ignore());
 
+        // MaterialDidatico
+        CreateMap<Models.MaterialDidatico, MaterialDidaticoDTO>();
+
         // PlanejamentoAula
         CreateMap<PlanejamentoAula, PlanejamentoAulaDTO>()
-            .ForMember(dest => dest.DisciplinaNome, opt => opt.MapFrom(src => src.Disciplina.Nome));
+            .ForMember(dest => dest.DisciplinaNome, opt => opt.MapFrom(src => src.Disciplina.Nome))
+            .ForMember(dest => dest.MateriaisDidaticos, opt => opt.MapFrom(src => src.MateriaisDidaticos));
         CreateMap<PlanejamentoAulaCreateDTO, PlanejamentoAula>()
             .ForMember(dest => dest.Id, opt => opt.Ignore())
             .ForMember(dest => dest.CriadoEm, opt => opt.Ignore());
@@ -73,6 +77,37 @@ public class MappingProfile : Profile
             .ForMember(dest => dest.Id, opt => opt.Ignore())
             .ForMember(dest => dest.AlunoId, opt => opt.Ignore())
             .ForMember(dest => dest.AulaId, opt => opt.Ignore());
+
+        // Avaliacao
+        CreateMap<Avaliacao, AvaliacaoDTO>()
+            .ForMember(dest => dest.DisciplinaNome, opt => opt.MapFrom(src => src.Disciplina != null ? src.Disciplina.Nome : string.Empty))
+            .ForMember(dest => dest.TemGabarito, opt => opt.Ignore()) // Será preenchido no service
+            .ForMember(dest => dest.TemNotasLancadas, opt => opt.Ignore()) // Será preenchido no service
+            .ForMember(dest => dest.TotalQuestoes, opt => opt.MapFrom(src => src.QuestoesObjetivas != null ? src.QuestoesObjetivas.Count : 0))
+            .ForMember(dest => dest.TipoDisplay, opt => opt.Ignore()); // Será preenchido no service
+        CreateMap<AvaliacaoCreateDTO, Avaliacao>()
+            .ForMember(dest => dest.Id, opt => opt.Ignore())
+            .ForMember(dest => dest.Disciplina, opt => opt.Ignore()) // Ignorar propriedade de navegação
+            .ForMember(dest => dest.QuestoesObjetivas, opt => opt.Ignore()) // Ignorar propriedade de navegação
+            .ForMember(dest => dest.NotasAvaliacao, opt => opt.Ignore()); // Ignorar propriedade de navegação
+        CreateMap<AvaliacaoUpdateDTO, Avaliacao>()
+            .ForMember(dest => dest.Id, opt => opt.Ignore())
+            .ForMember(dest => dest.Disciplina, opt => opt.Ignore()) // Ignorar propriedade de navegação
+            .ForMember(dest => dest.QuestoesObjetivas, opt => opt.Ignore()) // Ignorar propriedade de navegação
+            .ForMember(dest => dest.NotasAvaliacao, opt => opt.Ignore()); // Ignorar propriedade de navegação
+
+        // NotaAvaliacao
+        CreateMap<NotaAvaliacao, NotaAvaliacaoDTO>()
+            .ForMember(dest => dest.AlunoNome, opt => opt.MapFrom(src => src.Aluno.Nome))
+            .ForMember(dest => dest.AlunoMatricula, opt => opt.MapFrom(src => src.Aluno.Matricula));
+        CreateMap<NotaAvaliacaoCreateDTO, NotaAvaliacao>()
+            .ForMember(dest => dest.Id, opt => opt.Ignore())
+            .ForMember(dest => dest.DataLancamento, opt => opt.Ignore());
+        CreateMap<NotaAvaliacaoUpdateDTO, NotaAvaliacao>()
+            .ForMember(dest => dest.Id, opt => opt.Ignore())
+            .ForMember(dest => dest.AlunoId, opt => opt.Ignore())
+            .ForMember(dest => dest.AvaliacaoId, opt => opt.Ignore())
+            .ForMember(dest => dest.DataLancamento, opt => opt.Ignore());
     }
 }
 

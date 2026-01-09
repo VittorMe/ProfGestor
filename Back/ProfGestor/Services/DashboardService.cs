@@ -90,22 +90,33 @@ public class DashboardService : IDashboardService
         atividadesRecentes.AddRange(notasRecentes);
         
         // Últimas frequências registradas - buscar aulas únicas que têm frequências
+        // Primeiro buscar os IDs das aulas que têm frequências através de um join
+        var aulaIdsComFrequencia = await (
+            from a in _context.Aulas
+            join f in _context.Frequencias on a.Id equals f.AulaId
+            where turmaIds.Contains(a.TurmaId)
+            select a.Id
+        ).Distinct().ToListAsync();
+        
+        // Depois buscar as aulas com todas as relações carregadas corretamente
         var aulasComFrequencia = await _context.Aulas
+            .Where(a => aulaIdsComFrequencia.Contains(a.Id))
             .Include(a => a.Turma)
                 .ThenInclude(t => t.Disciplina)
-            .Include(a => a.Frequencias)
-            .Where(a => turmaIds.Contains(a.TurmaId) && a.Frequencias.Any())
             .OrderByDescending(a => a.Data)
             .Take(3)
             .ToListAsync();
         
-        var frequenciasRecentesDTO = aulasComFrequencia.Select(a => new AtividadeRecenteDTO
-        {
-            Acao = "Frequência registrada",
-            TurmaNome = a.Turma.Nome,
-            DisciplinaNome = a.Turma.Disciplina.Nome,
-            DataHora = a.Data.ToDateTime(TimeOnly.MinValue)
-        }).ToList();
+        var frequenciasRecentesDTO = aulasComFrequencia
+            .Where(a => a.Turma != null && a.Turma.Disciplina != null)
+            .Select(a => new AtividadeRecenteDTO
+            {
+                Acao = "Frequência registrada",
+                TurmaNome = a.Turma!.Nome,
+                DisciplinaNome = a.Turma.Disciplina!.Nome,
+                DataHora = a.Data.ToDateTime(TimeOnly.MinValue)
+            })
+            .ToList();
         
         atividadesRecentes.AddRange(frequenciasRecentesDTO);
         

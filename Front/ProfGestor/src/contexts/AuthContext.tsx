@@ -15,16 +15,35 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   useEffect(() => {
     // Verificar se há usuário salvo no localStorage
-    try {
-      const savedUser = authService.getCurrentUser();
-      if (savedUser && authService.isAuthenticated()) {
-        setUser(savedUser);
+    const loadUser = async () => {
+      try {
+        // Verificar autenticação primeiro
+        if (!authService.isAuthenticated()) {
+          setIsLoading(false);
+          return;
+        }
+
+        const savedUser = authService.getCurrentUser();
+        if (savedUser) {
+          setUser(savedUser);
+        } else {
+          // Se não conseguir carregar usuário, limpar autenticação
+          await authService.logout();
+        }
+      } catch (error) {
+        console.error('Erro ao carregar usuário:', error);
+        // Em caso de erro, limpar dados e garantir logout
+        try {
+          await authService.logout();
+        } catch (logoutError) {
+          console.error('Erro ao fazer logout após erro:', logoutError);
+        }
+      } finally {
+        setIsLoading(false);
       }
-    } catch (error) {
-      console.error('Erro ao carregar usuário:', error);
-    } finally {
-      setIsLoading(false);
-    }
+    };
+
+    loadUser();
   }, []);
 
   const login = async (email: string, password: string): Promise<void> => {

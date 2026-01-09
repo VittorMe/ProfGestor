@@ -76,6 +76,9 @@ namespace ProfGestor
             builder.Services.AddScoped<ILogRepository, LogRepository>();
             builder.Services.AddScoped<IAulaRepository, AulaRepository>();
             builder.Services.AddScoped<IFrequenciaRepository, FrequenciaRepository>();
+            builder.Services.AddScoped<IAvaliacaoRepository, AvaliacaoRepository>();
+            builder.Services.AddScoped<INotaAvaliacaoRepository, NotaAvaliacaoRepository>();
+            builder.Services.AddScoped<IGabaritoQuestaoRepository, GabaritoQuestaoRepository>();
             builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
 
             // Registrar Services
@@ -89,13 +92,25 @@ namespace ProfGestor
             builder.Services.AddScoped<IDisciplinaService, DisciplinaService>();
             builder.Services.AddScoped<IAulaService, AulaService>();
             builder.Services.AddScoped<IFrequenciaService, FrequenciaService>();
+            builder.Services.AddScoped<IAvaliacaoService, AvaliacaoService>();
+            builder.Services.AddScoped<INotaAvaliacaoService, NotaAvaliacaoService>();
+            builder.Services.AddScoped<IGabaritoService, GabaritoService>();
+            builder.Services.AddScoped<IRelatorioService, RelatorioService>();
 
             // Configurar JSON para usar camelCase (padrão JavaScript/TypeScript)
-            builder.Services.AddControllers()
+            builder.Services.AddControllers(options =>
+                {
+                    // Adicionar ModelBinderProvider para DateOnly em rotas
+                    options.ModelBinderProviders.Insert(0, new ProfGestor.Binders.DateOnlyModelBinderProvider());
+                })
                 .AddJsonOptions(options =>
                 {
                     options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
                     options.JsonSerializerOptions.WriteIndented = false;
+                    // Adicionar conversor para DateOnly (formato YYYY-MM-DD)
+                    options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
+                    options.JsonSerializerOptions.Converters.Add(new ProfGestor.Converters.DateOnlyJsonConverter());
+                    options.JsonSerializerOptions.Converters.Add(new ProfGestor.Converters.CharJsonConverter());
                 });
 
             // Configurar rotas para serem case-insensitive (importante para Linux)

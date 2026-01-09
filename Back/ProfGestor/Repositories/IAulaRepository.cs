@@ -10,3 +10,4 @@ public interface IAulaRepository : IRepository<Aula>
     Task<IEnumerable<Aula>> GetAllWithDetailsAsync();
 }
 
+

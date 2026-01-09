@@ -12,3 +12,4 @@ public interface IFrequenciaService
     Task<AulaDTO> RegistrarFrequenciaAsync(RegistrarFrequenciaDTO dto);
 }
 
+

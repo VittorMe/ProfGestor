@@ -1,0 +1,152 @@
+.planejamento-card {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s, box-shadow 0.2s;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.planejamento-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.planejamento-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.planejamento-title-section {
+  flex: 1;
+}
+
+.planejamento-titulo {
+  margin: 0 0 4px 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
+}
+
+.planejamento-disciplina {
+  font-size: 14px;
+  color: #666;
+  font-weight: 500;
+}
+
+.favorito-btn {
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  padding: 4px;
+  transition: transform 0.2s;
+  flex-shrink: 0;
+}
+
+.favorito-btn:hover {
+  transform: scale(1.2);
+}
+
+.favorito-btn.favorito {
+  filter: none;
+}
+
+.planejamento-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.planejamento-info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.info-label {
+  font-size: 12px;
+  color: #999;
+  font-weight: 500;
+}
+
+.info-value {
+  font-size: 14px;
+  color: #333;
+}
+
+.objetivos-text {
+  line-height: 1.5;
+}
+
+.material-didatico {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: #f5f5f5;
+  border-radius: 6px;
+  margin-top: 4px;
+}
+
+.material-icon {
+  font-size: 16px;
+}
+
+.material-nome {
+  font-size: 13px;
+  color: #666;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.planejamento-card-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #f0f0f0;
+}
+
+.btn-ver-detalhes {
+  flex: 1;
+  padding: 10px 16px;
+  background-color: #4a90e2;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: background-color 0.2s;
+}
+
+.btn-ver-detalhes:hover {
+  background-color: #357abd;
+}
+
+.btn-delete {
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  padding: 8px;
+  color: #dc3545;
+  transition: transform 0.2s;
+}
+
+.btn-delete:hover {
+  transform: scale(1.1);
+}
+

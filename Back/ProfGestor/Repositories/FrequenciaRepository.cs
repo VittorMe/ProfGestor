@@ -42,3 +42,4 @@ public class FrequenciaRepository : Repository<Frequencia>, IFrequenciaRepositor
     }
 }
 
+

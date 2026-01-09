@@ -39,3 +39,4 @@ public class FrequenciaAlunoDTO
     public StatusFrequencia Status { get; set; }
 }
 
+

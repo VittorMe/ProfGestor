@@ -3,7 +3,9 @@ import { AuthenticatedLayout } from '../components/Layout/AuthenticatedLayout';
 import { Loading } from '../components/UI/Loading';
 import { ErrorMessage } from '../components/UI/ErrorMessage';
 import { TurmaForm } from '../components/Turmas/TurmaForm';
+import { TurmaDetalhesModal } from '../components/Turmas/TurmaDetalhesModal';
 import { turmaService, type Turma } from '../services/turmaService';
+import { showError, showInfo } from '../utils/toast';
 import './Turmas.css';
 
 export const Turmas = () => {
@@ -11,6 +13,7 @@ export const Turmas = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
+  const [turmaDetalhesId, setTurmaDetalhesId] = useState<number | null>(null);
 
   useEffect(() => {
     const fetchTurmas = async () => {
@@ -40,7 +43,7 @@ export const Turmas = () => {
       setTurmas(turmas.filter(t => t.id !== id));
     } catch (err: any) {
       console.error('Erro ao excluir turma:', err);
-      alert('Erro ao excluir turma. Tente novamente.');
+      showError('Erro ao excluir turma. Tente novamente.');
     }
   };
 
@@ -99,6 +102,14 @@ export const Turmas = () => {
           />
         )}
 
+        {/* Modal de detalhes da turma */}
+        {turmaDetalhesId !== null && (
+          <TurmaDetalhesModal
+            turmaId={turmaDetalhesId}
+            onClose={() => setTurmaDetalhesId(null)}
+          />
+        )}
+
         {/* Grid de turmas */}
         {!loading && !error && (
           <div className="turmas-grid">
@@ -122,7 +133,7 @@ export const Turmas = () => {
                   <div className="turma-card-actions">
                     <button 
                       className="btn-ver-detalhes"
-                      onClick={() => alert(`Detalhes da turma ${turma.nome} - Funcionalidade em desenvolvimento`)}
+                      onClick={() => setTurmaDetalhesId(turma.id)}
                     >
                       <span className="btn-icon">👁️</span>
                       Ver Detalhes
@@ -140,7 +151,7 @@ export const Turmas = () => {
             ) : (
               <div className="empty-state">
                 <p>Nenhuma turma cadastrada ainda.</p>
-                <button className="btn-nova-turma" onClick={() => alert('Funcionalidade em desenvolvimento')}>
+                <button className="btn-nova-turma" onClick={() => showInfo('Funcionalidade em desenvolvimento')}>
                   <span className="btn-icon">+</span>
                   Criar Primeira Turma
                 </button>

@@ -83,6 +83,9 @@ public class FrequenciasController : ControllerBase
         if (professorId == 0)
             return Unauthorized();
 
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
+
         // Verificar se a turma pertence ao professor
         var turma = await _turmaService.GetByIdAsync(dto.TurmaId);
         if (turma == null)
@@ -91,8 +94,11 @@ public class FrequenciasController : ControllerBase
         if (turma.ProfessorId != professorId)
             return Forbid();
 
-        if (!ModelState.IsValid)
-            return BadRequest(ModelState);
+        // Validar se há frequências para registrar
+        if (dto.Frequencias == null || !dto.Frequencias.Any())
+        {
+            return BadRequest(new { error = "É necessário informar pelo menos uma frequência" });
+        }
 
         try
         {
@@ -106,6 +112,11 @@ public class FrequenciasController : ControllerBase
         catch (Exceptions.BusinessException ex)
         {
             return BadRequest(new { error = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            // Log do erro completo para debugging
+            return StatusCode(500, new { error = "Erro ao registrar frequência", details = ex.Message });
         }
     }
 

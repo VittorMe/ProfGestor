@@ -1,0 +1,103 @@
+.avaliacoes-content {
+  padding: 2rem;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.avaliacoes-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 2rem;
+}
+
+.header-text h1 {
+  font-size: 2rem;
+  color: #1a365d;
+  margin: 0 0 0.5rem 0;
+  font-weight: 600;
+}
+
+.header-text p {
+  font-size: 1rem;
+  color: #718096;
+  margin: 0;
+}
+
+.btn-nova-avaliacao {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  background-color: #1a365d;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.btn-nova-avaliacao:hover {
+  background-color: #2c5282;
+}
+
+.btn-nova-avaliacao .btn-icon {
+  font-size: 1.25rem;
+  font-weight: bold;
+}
+
+.avaliacoes-filters {
+  margin-bottom: 1.5rem;
+}
+
+.filter-select {
+  padding: 0.5rem 1rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 1rem;
+  background-color: white;
+  cursor: pointer;
+  min-width: 200px;
+}
+
+.filter-select:focus {
+  outline: none;
+  border-color: #1a365d;
+  box-shadow: 0 0 0 3px rgba(26, 54, 93, 0.1);
+}
+
+.avaliacoes-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+  gap: 1.5rem;
+}
+
+.empty-state {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 3rem;
+  color: #718096;
+}
+
+.empty-state p {
+  font-size: 1.125rem;
+  margin-bottom: 1.5rem;
+}
+
+@media (max-width: 768px) {
+  .avaliacoes-content {
+    padding: 1rem;
+  }
+
+  .avaliacoes-header {
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .avaliacoes-grid {
+    grid-template-columns: 1fr;
+  }
+}
+

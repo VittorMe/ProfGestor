@@ -1,5 +1,15 @@
 namespace ProfGestor.DTOs;
 
+public class MaterialDidaticoDTO
+{
+    public long Id { get; set; }
+    public string NomeArquivo { get; set; } = string.Empty;
+    public string TipoMime { get; set; } = string.Empty;
+    public double TamanhoMB { get; set; }
+    public string UrlArquivo { get; set; } = string.Empty;
+    public DateTime DataUpload { get; set; }
+}
+
 public class PlanejamentoAulaDTO
 {
     public long Id { get; set; }
@@ -12,6 +22,7 @@ public class PlanejamentoAulaDTO
     public DateTime CriadoEm { get; set; }
     public long DisciplinaId { get; set; }
     public string DisciplinaNome { get; set; } = string.Empty;
+    public List<MaterialDidaticoDTO> MateriaisDidaticos { get; set; } = new();
 }
 
 public class PlanejamentoAulaCreateDTO

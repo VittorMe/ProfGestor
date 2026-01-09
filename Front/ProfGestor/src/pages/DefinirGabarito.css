@@ -1,0 +1,203 @@
+.definir-gabarito-content {
+  padding: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.definir-gabarito-header {
+  margin-bottom: 2rem;
+}
+
+.btn-voltar {
+  background: none;
+  border: none;
+  color: #1a365d;
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 0.5rem 0;
+  margin-bottom: 1rem;
+  transition: color 0.2s;
+}
+
+.btn-voltar:hover {
+  color: #2c5282;
+  text-decoration: underline;
+}
+
+.header-text h1 {
+  font-size: 2rem;
+  color: #1a365d;
+  margin: 0 0 0.5rem 0;
+  font-weight: 600;
+}
+
+.context-info {
+  font-size: 1rem;
+  color: #718096;
+  margin: 0;
+}
+
+.gabarito-section {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.gabarito-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.gabarito-section-header h2 {
+  font-size: 1.5rem;
+  color: #1a365d;
+  margin: 0;
+  font-weight: 600;
+}
+
+.btn-salvar-gabarito {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  background-color: #1a365d;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.btn-salvar-gabarito:hover:not(:disabled) {
+  background-color: #2c5282;
+}
+
+.btn-salvar-gabarito:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-salvar-gabarito .btn-icon {
+  font-size: 1.25rem;
+}
+
+.questoes-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.questao-card {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 1rem;
+  transition: box-shadow 0.2s;
+}
+
+.questao-card:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.questao-header {
+  margin-bottom: 0.75rem;
+}
+
+.questao-header h3 {
+  font-size: 1rem;
+  color: #1a365d;
+  margin: 0;
+  font-weight: 600;
+}
+
+.alternativa-select {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 1rem;
+  background-color: white;
+  cursor: pointer;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.alternativa-select:focus {
+  outline: none;
+  border-color: #1a365d;
+  box-shadow: 0 0 0 3px rgba(26, 54, 93, 0.1);
+}
+
+.resumo-section {
+  background: #e6f2ff;
+  border: 1px solid #b3d9ff;
+  border-radius: 12px;
+  padding: 1.5rem;
+}
+
+.resumo-section h3 {
+  font-size: 1.25rem;
+  color: #1a365d;
+  margin: 0 0 1rem 0;
+  font-weight: 600;
+}
+
+.resumo-content {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.resumo-item {
+  color: #1a365d;
+  font-size: 1rem;
+  font-weight: 500;
+  padding: 0.5rem 1rem;
+  background: white;
+  border-radius: 6px;
+  border: 1px solid #b3d9ff;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 3rem;
+  color: #718096;
+}
+
+.empty-state p {
+  font-size: 1.125rem;
+  margin-bottom: 1.5rem;
+}
+
+@media (max-width: 768px) {
+  .definir-gabarito-content {
+    padding: 1rem;
+  }
+
+  .questoes-grid {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  }
+
+  .gabarito-section-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .btn-salvar-gabarito {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .resumo-content {
+    flex-direction: column;
+  }
+}
+

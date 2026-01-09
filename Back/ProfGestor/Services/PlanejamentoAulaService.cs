@@ -52,6 +52,36 @@ public class PlanejamentoAulaService : IPlanejamentoAulaService
         return _mapper.Map<IEnumerable<PlanejamentoAulaDTO>>(planejamentos);
     }
 
+    public async Task<IEnumerable<PlanejamentoAulaDTO>> SearchAsync(string searchTerm)
+    {
+        if (string.IsNullOrWhiteSpace(searchTerm))
+            return await GetAllAsync();
+
+        var planejamentos = await _repository.SearchAsync(searchTerm);
+        return _mapper.Map<IEnumerable<PlanejamentoAulaDTO>>(planejamentos);
+    }
+
+    public async Task<IEnumerable<PlanejamentoAulaDTO>> GetFavoritosByDisciplinasAsync(IEnumerable<long> disciplinaIds)
+    {
+        var planejamentos = await _repository.GetFavoritosByDisciplinasAsync(disciplinaIds);
+        return _mapper.Map<IEnumerable<PlanejamentoAulaDTO>>(planejamentos);
+    }
+
+    public async Task<IEnumerable<PlanejamentoAulaDTO>> SearchByDisciplinasAsync(string searchTerm, IEnumerable<long> disciplinaIds)
+    {
+        if (string.IsNullOrWhiteSpace(searchTerm))
+        {
+            // Se não há termo de busca, retornar todos os planejamentos das disciplinas
+            var allPlanejamentos = await _repository.GetAllWithDetailsAsync();
+            return _mapper.Map<IEnumerable<PlanejamentoAulaDTO>>(
+                allPlanejamentos.Where(p => disciplinaIds.Contains(p.DisciplinaId))
+            );
+        }
+
+        var planejamentos = await _repository.SearchByDisciplinasAsync(searchTerm, disciplinaIds);
+        return _mapper.Map<IEnumerable<PlanejamentoAulaDTO>>(planejamentos);
+    }
+
     public async Task<PlanejamentoAulaDTO> CreateAsync(PlanejamentoAulaCreateDTO dto)
     {
         // Validar disciplina
@@ -78,6 +108,19 @@ public class PlanejamentoAulaService : IPlanejamentoAulaService
             throw new NotFoundException("Disciplina", dto.DisciplinaId);
 
         _mapper.Map(dto, planejamento);
+        await _repository.UpdateAsync(planejamento);
+
+        var updated = await _repository.GetByIdWithDetailsAsync(id);
+        return _mapper.Map<PlanejamentoAulaDTO>(updated!);
+    }
+
+    public async Task<PlanejamentoAulaDTO> ToggleFavoritoAsync(long id)
+    {
+        var planejamento = await _repository.GetByIdAsync(id);
+        if (planejamento == null)
+            throw new NotFoundException("PlanejamentoAula", id);
+
+        planejamento.Favorito = !planejamento.Favorito;
         await _repository.UpdateAsync(planejamento);
 
         var updated = await _repository.GetByIdWithDetailsAsync(id);

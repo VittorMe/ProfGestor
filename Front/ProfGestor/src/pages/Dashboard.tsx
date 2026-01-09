@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { AuthenticatedLayout } from '../components/Layout/AuthenticatedLayout';
 import { Loading } from '../components/UI/Loading';
 import { ErrorMessage } from '../components/UI/ErrorMessage';
@@ -7,6 +8,7 @@ import { formatDate, formatClassTime } from '../utils/dateFormatters';
 import './Dashboard.css';
 
 export const Dashboard = () => {
+  const navigate = useNavigate();
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -41,11 +43,30 @@ export const Dashboard = () => {
     { title: 'Avaliações', value: '0', icon: '📄', color: '#f59e0b' },
   ];
 
+  const handleQuickAction = (action: string) => {
+    switch (action) {
+      case 'Registrar Frequência':
+        navigate('/frequencia');
+        break;
+      case 'Criar Planejamento':
+        navigate('/planejamentos');
+        break;
+      case 'Lançar Notas':
+        navigate('/avaliacoes');
+        break;
+      case 'Ver Relatórios':
+        navigate('/relatorios');
+        break;
+      default:
+        break;
+    }
+  };
+
   const quickActions = [
-    { label: 'Registrar Frequência', icon: '✓' },
-    { label: 'Criar Planejamento', icon: '📖' },
-    { label: 'Lançar Notas', icon: '📄' },
-    { label: 'Ver Relatórios', icon: '📊' },
+    { label: 'Registrar Frequência', icon: '✓', path: '/frequencia' },
+    { label: 'Criar Planejamento', icon: '📖', path: '/planejamentos' },
+    { label: 'Lançar Notas', icon: '📄', path: '/avaliacoes' },
+    { label: 'Ver Relatórios', icon: '📊', path: '/relatorios' },
   ];
 
   const nextClasses: Array<{ class: string; time: string; room: string }> = dashboardData?.proximasAulas.map((aula: ProximaAula) => ({
@@ -96,7 +117,12 @@ export const Dashboard = () => {
             <h2 className="card-title">Ações Rápidas</h2>
             <ul className="quick-actions-list">
               {quickActions.map((action, index) => (
-                <li key={index} className="quick-action-item">
+                <li 
+                  key={index} 
+                  className="quick-action-item"
+                  onClick={() => handleQuickAction(action.label)}
+                  style={{ cursor: 'pointer' }}
+                >
                   <span className="action-icon">{action.icon}</span>
                   <span className="action-label">{action.label}</span>
                 </li>

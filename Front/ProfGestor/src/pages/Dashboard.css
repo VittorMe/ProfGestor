@@ -113,11 +113,18 @@
   padding: 12px;
   border-radius: 8px;
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition: background-color 0.2s, transform 0.2s, box-shadow 0.2s;
+  user-select: none;
 }
 
 .quick-action-item:hover {
-  background-color: #f8f9fa;
+  background-color: #f0f4ff;
+  transform: translateX(4px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.quick-action-item:active {
+  transform: translateX(2px);
 }
 
 .action-icon {

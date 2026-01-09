@@ -1,6 +1,7 @@
 import api from '../config/api';
 import type { LoginRequest, LoginResponse, RegisterRequest, User } from '../types/auth';
 
+
 export const authService = {
   async login(email: string, password: string): Promise<LoginResponse> {
     // Validar inputs básicos
@@ -19,44 +20,28 @@ export const authService = {
     
     const response = await api.post<LoginResponse>('/auth/login', loginData);
     
-    // Validar resposta antes de salvar
-    if (!response.data.token || !response.data.professor) {
+    // Validar resposta
+    if (!response.data.professor) {
       throw new Error('Resposta de login inválida');
     }
 
-    // Validar formato do token antes de salvar
-    if (!this.isValidJWT(response.data.token)) {
-      throw new Error('Token recebido é inválido');
-    }
-    
-    // Salvar token no localStorage
-    localStorage.setItem('token', response.data.token);
-    
-    // Converter ProfessorInfo para User (formato esperado pelo front-end)
-    const user: User = {
-      id: response.data.professor.id,
-      email: response.data.professor.email,
-      name: response.data.professor.nome,
-    };
-    
-    localStorage.setItem('user', JSON.stringify(user));
-    
-    // Salvar data de expiração se fornecida
-    if (response.data.expiraEm) {
-      localStorage.setItem('tokenExpiresAt', response.data.expiraEm);
-    } else {
-      // Tentar extrair do token se não for fornecido
-      try {
-        const payload = JSON.parse(atob(response.data.token.split('.')[1]));
-        if (payload.exp) {
-          const expirationDate = new Date(payload.exp * 1000);
-          localStorage.setItem('tokenExpiresAt', expirationDate.toISOString());
-        }
-      } catch (error) {
-        console.warn('Não foi possível extrair data de expiração do token');
+    // Verificar se cookie foi aceito após login
+    // Aguardar um pouco para o cookie ser processado
+    setTimeout(async () => {
+      const { verifyCookieAfterLogin } = await import('../utils/cookieDetection');
+      const verification = await verifyCookieAfterLogin();
+      if (!verification.working) {
+        console.error('⚠️ ERRO: Cookies não estão funcionando!', verification.reason);
+        console.error('⚠️ A autenticação falhará nas próximas requisições.');
+        // Disparar evento customizado para o CookieWarning detectar
+        window.dispatchEvent(new CustomEvent('cookieVerificationFailed', { 
+          detail: verification 
+        }));
       }
-    }
-    
+    }, 500);
+
+    // Token está em cookie HttpOnly - não salvar nada no localStorage
+    // Retornar apenas os dados da resposta
     return response.data;
   },
 
@@ -73,156 +58,77 @@ export const authService = {
 
   async logout(): Promise<void> {
     try {
-      // Se o back-end tiver endpoint de logout, chamar aqui
-      // await api.post('/auth/logout');
+      // Chamar endpoint de logout no backend para remover cookie HttpOnly
+      await api.post('/auth/logout');
     } catch (error) {
       console.error('Erro ao fazer logout no servidor:', error);
-      // Continuar com logout local mesmo se falhar no servidor
-    } finally {
-      // Limpar todos os dados de autenticação
-      this.clearAuthData();
     }
+    // Não precisa limpar localStorage - não salvamos nada
   },
 
   clearAuthData(): void {
-    // Limpar todos os dados de autenticação de forma segura
-    try {
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      localStorage.removeItem('tokenExpiresAt');
-    } catch (error) {
-      console.error('Erro ao limpar dados de autenticação:', error);
-      // Tentar limpar individualmente em caso de erro
-      try {
-        localStorage.clear();
-      } catch (clearError) {
-        console.error('Erro ao limpar localStorage:', clearError);
-      }
-    }
+    // Não há nada para limpar - tudo está no cookie HttpOnly
+    // Esta função é mantida para compatibilidade, mas não faz nada
   },
 
   getCurrentUser(): User | null {
-    // Verificar se está autenticado antes de retornar usuário
-    if (!this.isAuthenticated()) {
-      return null;
-    }
-
-    const userStr = localStorage.getItem('user');
-    if (!userStr) {
-      return null;
-    }
-
-    try {
-      const user = JSON.parse(userStr);
-      
-      // Validar estrutura do usuário
-      if (!user || typeof user.id !== 'number' || !user.email || !user.name) {
-        console.warn('Dados do usuário inválidos');
-        this.clearAuthData();
-        return null;
-      }
-      
-      return user;
-    } catch (error) {
-      console.error('Erro ao parsear usuário do localStorage:', error);
-      this.clearAuthData();
-      return null;
-    }
+    // Não buscar do localStorage - sempre buscar do servidor
+    // Esta função é mantida para compatibilidade, mas sempre retorna null
+    return null;
   },
 
   getToken(): string | null {
-    const token = localStorage.getItem('token');
-    if (!token) return null;
-    
-    // Validar formato JWT
-    if (!this.isValidJWT(token)) {
-      console.warn('Token inválido: formato incorreto');
-      this.logout();
-      return null;
-    }
-    
-    // Verificar expiração do token
-    if (this.isTokenExpired(token)) {
-      console.warn('Token expirado');
-      this.logout();
-      return null;
-    }
-    
-    return token;
+    // Token agora está em cookie HttpOnly e não é acessível via JavaScript
+    // O navegador envia automaticamente com withCredentials: true
+    // Retornar null aqui, pois não precisamos mais ler o token
+    return null;
   },
 
-  isValidJWT(token: string): boolean {
-    // JWT tem 3 partes separadas por ponto: header.payload.signature
-    const parts = token.split('.');
-    if (parts.length !== 3) {
-      return false;
-    }
-    
-    // Verificar se cada parte é base64 válido
-    try {
-      parts.forEach(part => {
-        if (part.length === 0) throw new Error('Parte vazia');
-        // Tentar decodificar para validar base64
-        atob(part.replace(/-/g, '+').replace(/_/g, '/'));
-      });
-      return true;
-    } catch {
-      return false;
-    }
+  isValidJWT(_token: string): boolean {
+    // Token está em cookie HttpOnly, não precisamos mais validar no frontend
+    // O backend valida automaticamente
+    return true;
   },
 
-  isTokenExpired(token: string): boolean {
-    try {
-      // Decodificar payload do JWT (segunda parte)
-      const payload = JSON.parse(atob(token.split('.')[1]));
-      
-      // Verificar expiração (exp está em segundos Unix timestamp)
-      if (payload.exp) {
-        const expirationTime = payload.exp * 1000; // Converter para milissegundos
-        const now = Date.now();
-        
-        // Adicionar margem de segurança de 5 minutos antes da expiração real
-        const safetyMargin = 5 * 60 * 1000; // 5 minutos em milissegundos
-        
-        if (now >= (expirationTime - safetyMargin)) {
-          return true;
-        }
-      }
-      
-      // Se não tiver exp, verificar tokenExpiresAt do localStorage como fallback
-      const expiresAt = localStorage.getItem('tokenExpiresAt');
-      if (expiresAt) {
-        const expirationDate = new Date(expiresAt);
-        if (expirationDate < new Date()) {
-          return true;
-        }
-      }
-      
-      return false;
-    } catch (error) {
-      console.error('Erro ao verificar expiração do token:', error);
-      // Se não conseguir decodificar, considerar expirado por segurança
-      return true;
-    }
+  isTokenExpired(_token: string): boolean {
+    // Não podemos verificar expiração sem acessar o token
+    // O servidor valida automaticamente via cookie HttpOnly
+    return false;
   },
 
   isAuthenticated(): boolean {
-    const token = this.getToken();
-    return token !== null;
+    // Não podemos verificar sem fazer requisição ao servidor
+    // Retornar false - o AuthContext vai validar via servidor
+    return false;
   },
 
-  // Buscar usuário atual do servidor (opcional, útil para validar token)
+  // ÚNICO método que busca dados do servidor
   async getCurrentUserFromServer(): Promise<User | null> {
     try {
-      const response = await api.get<{ id: string; nome: string; email: string }>('/auth/me');
+      // Usar validateStatus para não rejeitar 401 como erro
+      // Isso evita que apareça no console do navegador
+      const response = await api.get<{ id: string; nome: string; email: string }>('/auth/me', {
+        validateStatus: (status) => {
+          // Aceitar 200 como sucesso, 401 como "não autenticado" (não é erro)
+          return status === 200 || status === 401;
+        }
+      });
+      
+      // Se retornou 401, usuário não está autenticado
+      if (response.status === 401) {
+        return null;
+      }
+      
+      // Se retornou 200, criar objeto User
       const user: User = {
         id: parseInt(response.data.id),
         email: response.data.email,
         name: response.data.nome,
       };
-      localStorage.setItem('user', JSON.stringify(user));
+      // Não salvar no localStorage - apenas retornar
       return user;
-    } catch (error) {
+    } catch (error: any) {
+      // Outros erros devem ser logados
       console.error('Erro ao buscar usuário do servidor:', error);
       return null;
     }

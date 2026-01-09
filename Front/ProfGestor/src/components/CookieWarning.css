@@ -1,0 +1,138 @@
+.cookie-warning-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 10000;
+  padding: 20px;
+  animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.cookie-warning-container {
+  background: white;
+  border-radius: 12px;
+  padding: 30px;
+  max-width: 500px;
+  width: 100%;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.cookie-warning-icon {
+  font-size: 48px;
+  text-align: center;
+  margin-bottom: 15px;
+}
+
+.cookie-warning-title {
+  color: #1a1a1a;
+  font-size: 24px;
+  font-weight: 600;
+  margin: 0 0 15px 0;
+  text-align: center;
+}
+
+.cookie-warning-message {
+  color: #4a4a4a;
+  font-size: 16px;
+  line-height: 1.6;
+  margin: 0 0 10px 0;
+  text-align: center;
+}
+
+.cookie-warning-details {
+  color: #666;
+  font-size: 14px;
+  line-height: 1.5;
+  margin: 0 0 25px 0;
+  text-align: center;
+}
+
+.cookie-warning-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 15px;
+}
+
+.cookie-warning-button {
+  padding: 12px 24px;
+  border: none;
+  border-radius: 6px;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  width: 100%;
+}
+
+.cookie-warning-button-primary {
+  background-color: #007bff;
+  color: white;
+}
+
+.cookie-warning-button-primary:hover {
+  background-color: #0056b3;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
+}
+
+.cookie-warning-button-secondary {
+  background-color: #f8f9fa;
+  color: #495057;
+  border: 1px solid #dee2e6;
+}
+
+.cookie-warning-button-secondary:hover {
+  background-color: #e9ecef;
+  border-color: #adb5bd;
+}
+
+.cookie-warning-note {
+  text-align: center;
+  color: #888;
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+/* Responsivo */
+@media (max-width: 600px) {
+  .cookie-warning-container {
+    padding: 20px;
+    margin: 20px;
+  }
+
+  .cookie-warning-title {
+    font-size: 20px;
+  }
+
+  .cookie-warning-message {
+    font-size: 14px;
+  }
+}

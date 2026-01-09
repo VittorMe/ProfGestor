@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
 using ProfGestor.DTOs;
 using ProfGestor.Services;
@@ -10,10 +11,12 @@ namespace ProfGestor.Controllers;
 public class AuthController : ControllerBase
 {
     private readonly IAuthService _authService;
+    private readonly IWebHostEnvironment _environment;
 
-    public AuthController(IAuthService authService)
+    public AuthController(IAuthService authService, IWebHostEnvironment environment)
     {
         _authService = authService;
+        _environment = environment;
     }
 
     [HttpPost("login")]
@@ -27,7 +30,28 @@ public class AuthController : ControllerBase
         if (response == null)
             return Unauthorized(new { message = "Email ou senha inválidos" });
 
-        return Ok(response);
+        // Configurar cookie HttpOnly para armazenar o token
+        var cookieOptions = new CookieOptions
+        {
+            HttpOnly = true, // Não acessível via JavaScript (proteção XSS)
+            Secure = !_environment.IsDevelopment(), // Apenas HTTPS em produção
+            SameSite = SameSiteMode.Strict, // Proteção CSRF
+            Expires = response.ExpiraEm,
+            Path = "/"
+        };
+
+        // Definir cookie com o token
+        Response.Cookies.Append("authToken", response.Token, cookieOptions);
+
+        // Não retornar o token no body (apenas no cookie)
+        var responseWithoutToken = new LoginResponse
+        {
+            ExpiraEm = response.ExpiraEm,
+            Professor = response.Professor
+            // Token não é incluído aqui por segurança
+        };
+
+        return Ok(responseWithoutToken);
     }
 
     [HttpPost("register")]
@@ -65,6 +89,22 @@ public class AuthController : ControllerBase
             return BadRequest(new { message = "Senha atual inválida" });
 
         return Ok(new { message = "Senha alterada com sucesso" });
+    }
+
+    [HttpPost("logout")]
+    [Authorize]
+    public IActionResult Logout()
+    {
+        // Remover cookie de autenticação
+        Response.Cookies.Delete("authToken", new CookieOptions
+        {
+            HttpOnly = true,
+            Secure = !_environment.IsDevelopment(),
+            SameSite = SameSiteMode.Strict,
+            Path = "/"
+        });
+
+        return Ok(new { message = "Logout realizado com sucesso" });
     }
 
     [HttpGet("me")]

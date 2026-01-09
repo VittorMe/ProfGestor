@@ -11,8 +11,9 @@ export interface RegisterRequest {
 }
 
 // Resposta do back-end .NET (configurado para usar camelCase)
+// Token agora está em cookie HttpOnly e não é retornado no body
 export interface LoginResponse {
-  token: string;
+  token?: string; // Opcional - não é mais retornado (está em cookie HttpOnly)
   expiraEm: string; // DateTime serializado como ISO string
   professor: ProfessorInfo;
 }

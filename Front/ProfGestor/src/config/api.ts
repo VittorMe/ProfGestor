@@ -1,9 +1,13 @@
 import axios from 'axios';
 
 // URL base da API .NET
-// Usa /api relativo ao domínio (funciona com NGINX em produção)
-// Para desenvolvimento local, configure VITE_API_BASE_URL no .env se necessário
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
+// Em desenvolvimento: usa /api para passar pelo proxy do Vite (mantém cookies)
+// Em produção: usa /api relativo ao domínio (funciona com NGINX)
+// IMPORTANTE: Não definir VITE_API_BASE_URL em desenvolvimento para usar o proxy
+const isDevelopment = import.meta.env.DEV;
+const API_BASE_URL = isDevelopment 
+  ? '/api' // Sempre usar proxy em desenvolvimento para manter cookies
+  : (import.meta.env.VITE_API_BASE_URL || '/api'); // Em produção, pode usar URL completa
 
 // Criar instância do axios
 export const api = axios.create({
@@ -11,49 +15,16 @@ export const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  withCredentials: true, // IMPORTANTE: Enviar cookies automaticamente (incluindo HttpOnly)
 });
 
-// Interceptor para adicionar token de autenticação
+// Interceptor para requisições
+// O token agora está em cookie HttpOnly e é enviado automaticamente pelo navegador
+// Não precisamos mais adicionar manualmente no header Authorization
 api.interceptors.request.use(
   (config) => {
-    // Importar authService de forma dinâmica para evitar dependência circular
-    const token = localStorage.getItem('token');
-    
-    if (token) {
-      // Validar token antes de usar
-      try {
-        // Verificar formato básico JWT (3 partes)
-        const parts = token.split('.');
-        if (parts.length === 3) {
-          // Verificar expiração básica
-          try {
-            const payload = JSON.parse(atob(parts[1]));
-            if (payload.exp) {
-              const expirationTime = payload.exp * 1000;
-              const now = Date.now();
-              // Se expirado, não adicionar token
-              if (now >= expirationTime) {
-                console.warn('Token expirado na requisição');
-                localStorage.removeItem('token');
-                localStorage.removeItem('user');
-                localStorage.removeItem('tokenExpiresAt');
-                // Redirecionar para login se não estiver já na página de login
-                if (!window.location.pathname.includes('/login')) {
-                  window.location.href = '/login';
-                }
-                return Promise.reject(new Error('Token expirado'));
-              }
-            }
-          } catch {
-            // Se não conseguir decodificar, continuar (deixar servidor validar)
-          }
-        }
-        
-        config.headers.Authorization = `Bearer ${token}`;
-      } catch (error) {
-        console.error('Erro ao validar token na requisição:', error);
-      }
-    }
+    // O token está em cookie HttpOnly e será enviado automaticamente
+    // Não precisamos fazer nada aqui
     return config;
   },
   (error) => {
@@ -73,23 +44,13 @@ api.interceptors.response.use(
 
     if (error.response?.status === 401) {
       // Token inválido ou expirado
-      console.warn('Erro 401: Token inválido ou expirado');
-      
-      // Limpar dados de autenticação
-      try {
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        localStorage.removeItem('tokenExpiresAt');
-      } catch (clearError) {
-        console.error('Erro ao limpar dados de autenticação:', clearError);
-      }
-      
-      // Redirecionar para login apenas se não estiver já na página de login
-      if (!window.location.pathname.includes('/login') && 
-          !window.location.pathname.includes('/register')) {
-        window.location.href = '/login';
-      }
+      // Não logar como erro - pode ser comportamento esperado (usuário não autenticado)
+      // Não limpar localStorage - não salvamos nada lá
+      // Apenas rejeitar o erro silenciosamente para o AuthContext gerenciar
+      return Promise.reject(error);
     }
+    
+    // Outros erros devem ser logados normalmente
     return Promise.reject(error);
   }
 );

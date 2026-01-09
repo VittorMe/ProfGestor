@@ -3,6 +3,7 @@ import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
+import { CookieWarning } from './components/CookieWarning';
 import { Login } from './pages/Login';
 import { Register } from './pages/Register';
 import { Dashboard } from './pages/Dashboard';
@@ -47,6 +48,7 @@ const RootRedirect = () => {
 function App() {
   return (
     <AuthProvider>
+      <CookieWarning />
       <BrowserRouter>
         <Routes>
           <Route path="/test" element={<Test />} />

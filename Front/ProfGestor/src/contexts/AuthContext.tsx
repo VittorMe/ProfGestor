@@ -14,29 +14,28 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Verificar se há usuário salvo no localStorage
+    // Sempre validar com o servidor ao carregar
     const loadUser = async () => {
       try {
-        // Verificar autenticação primeiro
-        if (!authService.isAuthenticated()) {
-          setIsLoading(false);
-          return;
-        }
-
-        const savedUser = authService.getCurrentUser();
-        if (savedUser) {
-          setUser(savedUser);
+        // Tentar buscar usuário do servidor (cookie HttpOnly será enviado automaticamente)
+        const serverUser = await authService.getCurrentUserFromServer();
+        if (serverUser) {
+          setUser(serverUser);
         } else {
-          // Se não conseguir carregar usuário, limpar autenticação
-          await authService.logout();
+          // Se não retornou usuário, não está autenticado
+          setUser(null);
         }
-      } catch (error) {
-        console.error('Erro ao carregar usuário:', error);
-        // Em caso de erro, limpar dados e garantir logout
-        try {
-          await authService.logout();
-        } catch (logoutError) {
-          console.error('Erro ao fazer logout após erro:', logoutError);
+      } catch (error: any) {
+        // Se der 401, não está autenticado - comportamento normal
+        if (error.response?.status === 401) {
+          setUser(null);
+          // Não logar 401 como erro - é comportamento esperado
+        } else {
+          // Outro erro - logar apenas se for erro de rede/servidor
+          if (error.code !== 'ERR_NETWORK' && error.response?.status !== 401) {
+            console.warn('Erro ao validar autenticação:', error.message);
+          }
+          setUser(null);
         }
       } finally {
         setIsLoading(false);
@@ -49,10 +48,21 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const login = async (email: string, password: string): Promise<void> => {
     try {
       setIsLoading(true);
-      await authService.login(email, password);
-      // Buscar o usuário atualizado do localStorage
-      const user = authService.getCurrentUser();
-      setUser(user);
+      const response = await authService.login(email, password);
+      
+      // Após login bem-sucedido, buscar usuário do servidor
+      const serverUser = await authService.getCurrentUserFromServer();
+      if (serverUser) {
+        setUser(serverUser);
+      } else {
+        // Se não conseguiu buscar, converter da resposta do login
+        const user: User = {
+          id: response.professor.id,
+          email: response.professor.email,
+          name: response.professor.nome,
+        };
+        setUser(user);
+      }
     } catch (error: any) {
       throw new Error(
         error.response?.data?.message || 'Erro ao fazer login. Verifique suas credenciais.'

@@ -76,14 +76,36 @@ export const LancarNotas = () => {
       const notasParaEnviar = alunosNotas
         .filter(a => a.nota !== null && a.nota !== undefined && a.nota >= 0)
         .map(a => ({
-          alunoId: a.alunoId,
-          valor: a.nota!
+          alunoId: Number(a.alunoId), // Garantir que é number
+          valor: Number(a.nota!) // Garantir que é number
         }));
 
-      await notaService.lancarNotas({
-        avaliacaoId: resumo.avaliacaoId,
+      // Validar se há notas para enviar
+      if (notasParaEnviar.length === 0) {
+        setError('Nenhuma nota válida para salvar.');
+        setSaving(false);
+        return;
+      }
+
+      // Validar IDs e valores
+      const notasInvalidas = notasParaEnviar.filter(n => 
+        !n.alunoId || n.alunoId <= 0 || isNaN(n.valor) || n.valor < 0
+      );
+
+      if (notasInvalidas.length > 0) {
+        setError('Algumas notas contêm dados inválidos.');
+        setSaving(false);
+        return;
+      }
+
+      const requestData = {
+        avaliacaoId: Number(resumo.avaliacaoId), // Garantir que é number
         notas: notasParaEnviar
-      });
+      };
+
+      console.log('Enviando dados:', JSON.stringify(requestData, null, 2));
+
+      await notaService.lancarNotas(requestData);
 
       // Recarregar dados
       const data = await notaService.getLancamentoNotas(resumo.avaliacaoId);

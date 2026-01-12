@@ -125,9 +125,13 @@ public class AlunosController : ControllerBase
 
             return NoContent();
         }
-        catch (Exceptions.NotFoundException)
+        catch (Exceptions.NotFoundException ex)
         {
-            return NotFound();
+            return NotFound(new { error = ex.Message });
+        }
+        catch (Exceptions.BusinessException ex)
+        {
+            return BadRequest(new { error = ex.Message });
         }
     }
 }

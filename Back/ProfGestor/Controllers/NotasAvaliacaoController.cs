@@ -46,8 +46,33 @@ public class NotasAvaliacaoController : ControllerBase
         if (professorId == 0)
             return Unauthorized();
 
+        // Validação manual para mensagens mais claras
+        if (dto == null)
+            return BadRequest(new { error = "Dados não fornecidos" });
+
+        if (dto.AvaliacaoId <= 0)
+            return BadRequest(new { error = "ID da avaliação inválido" });
+
+        if (dto.Notas == null || dto.Notas.Count == 0)
+            return BadRequest(new { error = "Nenhuma nota fornecida para lançamento" });
+
+        foreach (var nota in dto.Notas)
+        {
+            if (nota.AlunoId <= 0)
+                return BadRequest(new { error = $"ID do aluno inválido: {nota.AlunoId}" });
+            
+            if (nota.Valor < 0)
+                return BadRequest(new { error = $"Valor da nota inválido para aluno {nota.AlunoId}: {nota.Valor}" });
+        }
+
         if (!ModelState.IsValid)
-            return BadRequest(ModelState);
+        {
+            var errors = ModelState
+                .Where(x => x.Value?.Errors.Count > 0)
+                .SelectMany(x => x.Value!.Errors.Select(e => e.ErrorMessage))
+                .ToList();
+            return BadRequest(new { error = string.Join("; ", errors) });
+        }
 
         try
         {
@@ -65,6 +90,17 @@ public class NotasAvaliacaoController : ControllerBase
         catch (UnauthorizedAccessException)
         {
             return Forbid();
+        }
+        catch (Exception ex)
+        {
+            // Log do erro para debug
+            Console.WriteLine($"Erro ao lançar notas: {ex.Message}");
+            Console.WriteLine($"StackTrace: {ex.StackTrace}");
+            if (ex.InnerException != null)
+            {
+                Console.WriteLine($"InnerException: {ex.InnerException.Message}");
+            }
+            return BadRequest(new { error = $"Erro ao salvar notas: {ex.Message}" });
         }
     }
 

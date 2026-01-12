@@ -125,37 +125,130 @@ public class NotaAvaliacaoService : INotaAvaliacaoService
         if (alunosValidos.Count != alunosIds.Count)
             throw new BadRequestException("Alguns alunos não pertencem às turmas do professor");
 
-        // Buscar notas existentes
-        var notasExistentes = await _repository.GetByAvaliacaoIdAsync(dto.AvaliacaoId);
-        var notasDict = notasExistentes.ToDictionary(n => n.AlunoId, n => n);
+        // IMPORTANTE: Detectar e remover entidades problemáticas do ChangeTracker
+        // Isso evita que entidades Aluno/Frequencia carregadas anteriormente interfiram
+        var problematicEntries = _context.ChangeTracker.Entries()
+            .Where(e => e.State != EntityState.Detached &&
+                        (e.Entity is Models.Aluno || e.Entity is Models.Frequencia || e.Entity is Models.Turma))
+            .ToList();
 
-        // Processar cada nota
-        foreach (var notaDto in dto.Notas)
+        foreach (var entry in problematicEntries)
         {
-            // Validar valor
-            if (notaDto.Valor < 0 || notaDto.Valor > avaliacao.ValorMaximo)
-                throw new BadRequestException($"Nota inválida para aluno {notaDto.AlunoId}. Deve estar entre 0 e {avaliacao.ValorMaximo}");
+            entry.State = EntityState.Detached;
+        }
 
-            if (notasDict.TryGetValue(notaDto.AlunoId, out var notaExistente))
+        // Usar transação para garantir atomicidade
+        using var transaction = await _context.Database.BeginTransactionAsync();
+        try
+        {
+            // Buscar notas existentes (sem tracking e sem Include para evitar carregar relacionamentos)
+            var notasExistentes = await _context.NotasAvaliacao
+                .AsNoTracking()
+                .Where(n => n.AvaliacaoId == dto.AvaliacaoId)
+                .Select(n => new { n.Id, n.AlunoId, n.Valor, n.DataLancamento })
+                .ToListAsync();
+            var notasDict = notasExistentes.ToDictionary(n => n.AlunoId, n => n);
+
+            var notasParaAdicionar = new List<Models.NotaAvaliacao>();
+            var idsParaAtualizar = new List<long>();
+
+            // Processar cada nota
+            foreach (var notaDto in dto.Notas)
             {
-                // Atualizar nota existente
-                notaExistente.Valor = notaDto.Valor;
-                notaExistente.DataLancamento = DateTime.Now;
-                await _repository.UpdateAsync(notaExistente);
-            }
-            else
-            {
-                // Criar nova nota
-                var novaNota = new Models.NotaAvaliacao
+                // Validar valor
+                if (notaDto.Valor < 0 || notaDto.Valor > avaliacao.ValorMaximo)
+                    throw new BadRequestException($"Nota inválida para aluno {notaDto.AlunoId}. Deve estar entre 0 e {avaliacao.ValorMaximo}");
+
+                if (notasDict.TryGetValue(notaDto.AlunoId, out var notaExistente))
                 {
-                    Valor = notaDto.Valor,
-                    AlunoId = notaDto.AlunoId,
-                    AvaliacaoId = dto.AvaliacaoId,
-                    DataLancamento = DateTime.Now,
-                    Origem = "Manual"
-                };
-                await _repository.AddAsync(novaNota);
+                    // Adicionar ID para atualização
+                    idsParaAtualizar.Add(notaExistente.Id);
+                }
+                else
+                {
+                    // Criar nova nota
+                    var novaNota = new Models.NotaAvaliacao
+                    {
+                        Valor = notaDto.Valor,
+                        AlunoId = notaDto.AlunoId,
+                        AvaliacaoId = dto.AvaliacaoId,
+                        DataLancamento = DateTime.Now,
+                        Origem = "Manual"
+                    };
+                    notasParaAdicionar.Add(novaNota);
+                }
             }
+
+            // Adicionar todas as novas notas de uma vez
+            if (notasParaAdicionar.Any())
+            {
+                await _context.NotasAvaliacao.AddRangeAsync(notasParaAdicionar);
+            }
+
+            // Atualizar notas existentes sem carregar relacionamentos
+            if (idsParaAtualizar.Any())
+            {
+                // Criar um dicionário para mapear Id da nota -> Valor
+                var valoresPorNotaId = new Dictionary<long, double>();
+                foreach (var notaDto in dto.Notas)
+                {
+                    if (notasDict.TryGetValue(notaDto.AlunoId, out var notaExistente))
+                    {
+                        valoresPorNotaId[notaExistente.Id] = notaDto.Valor;
+                    }
+                }
+
+                // Buscar notas para atualizar sem Include (não carregar relacionamentos)
+                var notasParaAtualizar = await _context.NotasAvaliacao
+                    .Where(n => idsParaAtualizar.Contains(n.Id))
+                    .ToListAsync();
+
+                // Atualizar apenas os campos necessários
+                foreach (var nota in notasParaAtualizar)
+                {
+                    if (valoresPorNotaId.TryGetValue(nota.Id, out var novoValor))
+                    {
+                        nota.Valor = novoValor;
+                        nota.DataLancamento = DateTime.Now;
+                        
+                        // Marcar explicitamente que apenas Valor e DataLancamento foram modificados
+                        _context.Entry(nota).Property(n => n.Valor).IsModified = true;
+                        _context.Entry(nota).Property(n => n.DataLancamento).IsModified = true;
+                        _context.Entry(nota).Property(n => n.AlunoId).IsModified = false;
+                        _context.Entry(nota).Property(n => n.AvaliacaoId).IsModified = false;
+                        _context.Entry(nota).Property(n => n.Origem).IsModified = false;
+                        
+                        // Garantir que o relacionamento com Aluno não seja carregado ou modificado
+                        _context.Entry(nota).Reference(n => n.Aluno).IsLoaded = false;
+                        _context.Entry(nota).Reference(n => n.Avaliacao).IsLoaded = false;
+                    }
+                }
+            }
+
+            // Salvar todas as mudanças de uma vez
+            await _context.SaveChangesAsync();
+
+            // Commit da transação
+            await transaction.CommitAsync();
+        }
+        catch (DbUpdateException ex)
+        {
+            await transaction.RollbackAsync();
+            // Log detalhado do erro para debug
+            Console.WriteLine($"Erro ao salvar Notas: {ex.Message}");
+            Console.WriteLine($"AvaliacaoId: {dto.AvaliacaoId}");
+            Console.WriteLine($"Entidades rastreadas antes do detach: {problematicEntries.Count}");
+            if (ex.InnerException != null)
+            {
+                Console.WriteLine($"InnerException: {ex.InnerException.Message}");
+                Console.WriteLine($"InnerException StackTrace: {ex.InnerException.StackTrace}");
+            }
+            throw;
+        }
+        catch (Exception)
+        {
+            await transaction.RollbackAsync();
+            throw;
         }
     }
 

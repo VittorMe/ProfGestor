@@ -212,15 +212,12 @@ public class NotaAvaliacaoService : INotaAvaliacaoService
                         nota.DataLancamento = DateTime.Now;
                         
                         // Marcar explicitamente que apenas Valor e DataLancamento foram modificados
+                        // Não modificar AlunoId ou AvaliacaoId
                         _context.Entry(nota).Property(n => n.Valor).IsModified = true;
                         _context.Entry(nota).Property(n => n.DataLancamento).IsModified = true;
                         _context.Entry(nota).Property(n => n.AlunoId).IsModified = false;
                         _context.Entry(nota).Property(n => n.AvaliacaoId).IsModified = false;
                         _context.Entry(nota).Property(n => n.Origem).IsModified = false;
-                        
-                        // Garantir que o relacionamento com Aluno não seja carregado ou modificado
-                        _context.Entry(nota).Reference(n => n.Aluno).IsLoaded = false;
-                        _context.Entry(nota).Reference(n => n.Avaliacao).IsLoaded = false;
                     }
                 }
             }

@@ -50,6 +50,7 @@ A aplicação foi construída com arquitetura moderna, separando frontend e back
 ### Produção
 <!-- Adicione aqui o link de produção quando disponível -->
 🔗 **Link de Produção**: https://vitrequested.com.br/login
+🔗 **Link de Produção - API**: https://vitrequested.com.br/swagger
 
 ### Testes
 <!-- Adicione aqui o link da planilha de testes -->

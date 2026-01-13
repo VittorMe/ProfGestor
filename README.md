@@ -49,11 +49,11 @@ A aplicação foi construída com arquitetura moderna, separando frontend e back
 
 ### Produção
 <!-- Adicione aqui o link de produção quando disponível -->
-🔗 **Link de Produção**: [A ser definido]
+🔗 **Link de Produção**: https://vitrequested.com.br/login
 
 ### Testes
 <!-- Adicione aqui o link da planilha de testes -->
-📊 **Planilha de Testes**: [A ser definido]
+📊 **Planilha de Testes**: https://docs.google.com/spreadsheets/d/13K_PU3NZL8ppPFGgXLCBkT7el8XQHoo7/edit?usp=sharing&ouid=110783221065718925791&rtpof=true&sd=true
 
 ## 🛠️ Tecnologias Utilizadas
 
